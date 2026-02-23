@@ -17,12 +17,13 @@ const Product = require("./models/Product");
 const app = express();
 
 //elastic search
-// const productSearchRoutes = require("./routes/productSearch");
+const productSearchRoutes = require("./routes/productSearch");
 
-// app.use("/api/products", productSearchRoutes);
+app.use(cors());//should be above the routes
+app.use("/api/products/search-es", productSearchRoutes);
 
 // Middleware
-app.use(cors());
+
 app.use(express.json());
 
 // Routes

@@ -7,6 +7,28 @@ const esClient = require("../config/elastic");
   try {
     await sequelize.authenticate();
 
+    const indexName = "products";
+    const indexExists = await esClient.indices.exists({ index: indexName });
+    if (indexExists) {
+      await esClient.indices.delete({ index: indexName });
+    }
+
+    await esClient.indices.create({
+      index: indexName,
+      body: {
+        mappings: {
+          properties: {
+            pd_name: { type: "text" },
+            pd_description: { type: "text" },
+            pd_price: { type: "double" },
+            cd_id: { type: "integer" },
+            createdAt: { type: "date" },
+            updatedAt: { type: "date" }
+          }
+        }
+      }
+    });
+
     const products = await Product.findAll();
     console.log(`Found ${products.length} products in MySQL`);
 
@@ -23,10 +45,10 @@ const esClient = require("../config/elastic");
         {
           pd_name: product.pd_name,
           pd_description: product.pd_description,
-          pd_price: product.pd_price,
+          pd_price: parseFloat(product.pd_price),
           cd_id: product.cd_id,
           createdAt: product.createdAt,
-        updatedAt: product.updatedAt,
+          updatedAt: product.updatedAt,
         }
       );
     });

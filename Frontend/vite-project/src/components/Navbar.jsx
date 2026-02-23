@@ -32,20 +32,35 @@ function Navbar({ user, setSearchResults, setSelectedCat, setParentSearchQuery }
         }
       }
 
-      // Product-name search fallback
-      const res = await axios.get(
-        `http://localhost:5000/api/products/search?q=${encodeURIComponent(searchQuery)}`
-      );
+    // ElasticSearch route
+    const esRes = await axios.get(
+      `http://localhost:5000/api/products/search-es`,
+      {
+        params: {
+          q: searchQuery,
+          page: 1,       // can be dynamic later
+          perPage: 10,   // match your frontend pagination
+          // minPrice, maxPrice // optional: if you want numeric filters
+        },
+      }
+    );
 
-      // backend returns { products: [...] }
-      setSearchResults(res.data.products || res.data);
-      setSelectedCat(null);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setIsSearching(false);
-    }
-  };
+    setSearchResults(esRes.data.products || []);
+    setSelectedCat(null);
+    console.log(
+      `SEARCH QUERY: ${searchQuery}`,
+      "RESULT COUNT:",
+      esRes.data.total,
+      "ROWS:",
+      esRes.data.products.map((p) => p.pd_name)
+    );
+
+  } catch (err) {
+    console.error("Search failed:", err);
+  } finally {
+    setIsSearching(false);
+  }
+};
 
   const handleLogout = () => {
     localStorage.removeItem("token");

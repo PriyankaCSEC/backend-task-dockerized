@@ -69,13 +69,14 @@ function Home() {
 
   try {
     setIsSearching(true);
-
+//elastic search endpoint
 		const res = await axios.get(
-			`http://localhost:5000/api/products/search?q=${searchQuery}`
-		);
+  `http://localhost:5000/api/products/search-es?q=${encodeURIComponent(searchQuery)}&page=${currentPage}&perPage=${PRODUCTS_PER_PAGE}`
+);
 
+setSearchResults(res.data.products || []);
 		// backend returns { products: [...] }
-		setSearchResults(res.data.products || res.data); //update search results state with products returned from backend
+		// setSearchResults(res.data.products || res.data); //update search results state with products returned from backend
     setSelectedCat(null); // stop category filtering
   } catch (err) {
     console.error(err);
@@ -83,6 +84,7 @@ function Home() {
     setIsSearching(false);
   }
 };
+
 
 
 	const handleCategoryClick = (cat) => {
