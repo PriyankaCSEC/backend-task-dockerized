@@ -20,18 +20,26 @@ function Signin() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    try {
-      const res = await axios.post(
-        "http://localhost:5000/api/auth/login",
-        formData
-      );
+      try {
+    const res = await axios.post(
+      "http://localhost:5000/api/auth/login",
+      formData
+    );
 
-      // Optionally store auth token here: 
-      localStorage.setItem('token', res.data.token);
-        localStorage.setItem("user", JSON.stringify(res.data.user));
-      console.log(res.data);
-      navigate("/home");
-    } catch (error) {
+    const { token, user } = res.data;
+
+    // Store token
+    localStorage.setItem("token", token);
+
+    // Store user info
+    localStorage.setItem("user", JSON.stringify(user));
+
+    // Optional: set default auth header for future axios calls
+    axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+
+    navigate("/home");
+
+  } catch (error) {
       console.error(error.response?.data || error.message);
       alert("Signin failed");
     }
@@ -61,7 +69,8 @@ function Signin() {
             onChange={handleChange}
             required
           />
-
+          {/* <p>create account</p>
+          <a href="/signup">Signup here</a> */}
           <button type="submit">Signin</button>
         </form>
       </div>

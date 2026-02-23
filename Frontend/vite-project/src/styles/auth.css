@@ -33,7 +33,7 @@ body {
 .auth-card h2 {
   text-align: center;
   margin: 0 0 18px 0;
-  color: #5b21b6;
+  color:  #22c55e;
   font-size: 22px;
 }
 
@@ -62,7 +62,7 @@ body {
 
 .auth-card input:focus {
   outline: none;
-  border-color: #7c3aed;
+  border-color:  #22c55e;
   box-shadow: 0 6px 18px rgba(124, 58, 237, 0.08), 0 0 0 4px rgba(124, 58, 237, 0.06);
 }
 
@@ -70,7 +70,7 @@ body {
   width: 100%;
   padding: 12px 14px;
   margin-top: 14px;
-  background: linear-gradient(90deg, #7c3aed 0%, #6d28d9 100%);
+  background: linear-gradient(90deg,  #22c55e 0%,  #7700ff 100%);
   color: #fff;
   border: none;
   border-radius: 10px;

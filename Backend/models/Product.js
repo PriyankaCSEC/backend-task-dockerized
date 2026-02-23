@@ -41,7 +41,9 @@ const Product = sequelize.define("Product", {
 });
 
 // RELATIONSHIP
-Category.hasMany(Product, { foreignKey: "cd_id" });
-Product.belongsTo(Category, { foreignKey: "cd_id" });
-
+// Category.hasMany(Product, { foreignKey: "cd_id" });
+// Product.belongsTo(Category, {
+//   foreignKey: "cd_id",
+//   as: "category"
+// });
 module.exports = Product;

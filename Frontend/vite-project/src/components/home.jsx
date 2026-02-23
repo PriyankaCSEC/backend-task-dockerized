@@ -2,23 +2,41 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import "../styles/home.css";
 import { useNavigate } from "react-router-dom";
-import AllProducts from "./AllProducts";
+import Navbar from "../components/Navbar";
 
 
 function Home() {
 	const [categories, setCategories] = useState([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState(null);
-
 	const [products, setProducts] = useState([]);
 	const [productsLoading, setProductsLoading] = useState(false);
 	const [selectedCat, setSelectedCat] = useState(null);
 	const [currentPage, setCurrentPage] = useState(1);
 	const PRODUCTS_PER_PAGE = 5;
-	const user = JSON.parse(localStorage.getItem("user"));
+	// const user = JSON.parse(localStorage.getItem("user"));
 	const navigate = useNavigate();
+	const [user, setUser] = useState(null);
+	//search
+	const [searchQuery, setSearchQuery] = useState("");
+	const [searchResults, setSearchResults] = useState([]);//stores products returned from backend
+	const [isSearching, setIsSearching] = useState(false);
+
 
 	useEffect(() => {
+  //Restore user session
+  const storedUser = localStorage.getItem("user");
+  const token = localStorage.getItem("token");
+
+  if (!storedUser || !token) {
+    navigate("/signin");
+    return;
+  }
+  setUser(JSON.parse(storedUser));
+   // Set token globally for axios
+  axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+
+		
 		const fetchCategories = async () => {
 			try {
 				const res = await axios.get("http://localhost:5000/api/categories");
@@ -31,12 +49,13 @@ function Home() {
 		};
 
 		fetchCategories();
-	}, []);
+	}, [navigate]);
 
 	const fetchProducts = async () => {
 		setProductsLoading(true);
 		try {
 			const res = await axios.get("http://localhost:5000/api/products");
+			console.log(res);
 			setProducts(res.data || []);
 		} catch (err) {
 			setError(err.response?.data?.message || err.message);
@@ -44,6 +63,27 @@ function Home() {
 			setProductsLoading(false);
 		}
 	};
+//search
+	const handleSearch = async () => {
+  if (!searchQuery.trim()) return;
+
+  try {
+    setIsSearching(true);
+
+		const res = await axios.get(
+			`http://localhost:5000/api/products/search?q=${searchQuery}`
+		);
+
+		// backend returns { products: [...] }
+		setSearchResults(res.data.products || res.data); //update search results state with products returned from backend
+    setSelectedCat(null); // stop category filtering
+  } catch (err) {
+    console.error(err);
+  } finally {
+    setIsSearching(false);
+  }
+};
+
 
 	const handleCategoryClick = (cat) => {
 		setSelectedCat(cat);
@@ -65,32 +105,17 @@ function Home() {
 
 	return (
 		<div className="home-root">
-			<nav className="nav">
-				<div className="nav-left">ECom</div>
-
-				<div className="nav-center">
-					<input
-						type="text"
-						placeholder="Search products..."
-						className="search-input"
-					/>
-				</div>
-
-				<div className="nav-right">
-					<button className="all-products-btn"
-					onClick={() => navigate("/api/allproducts")}
-					>
-						All Products
-					</button>
-					<a href="/api/signin" className="nav-link">Signin</a>
-					<a href="/api/signup" className="nav-link">Signup</a>
-				</div>
-			</nav>
+			<Navbar 
+	 user={user}
+	 setSearchResults={setSearchResults}
+	 setSelectedCat={setSelectedCat}
+	 setParentSearchQuery={setSearchQuery}
+	/>
 
 
 			<header className="hero">
 				<h1>Shop by Category</h1>
-				<p>Browse products grouped by categories from the database.</p>
+				
 			</header>
 
 			<main className="container">
@@ -118,46 +143,65 @@ function Home() {
 							</div>
 						</aside>
 
-						<div className="content">
-							{!selectedCat && <div className="status">Select a category to view products.</div>}
+	<div className="content">
 
-							{selectedCat && (
-								<section className="products-section">
-									<h2 className="section-title">Products — {selectedCat.cd_name}</h2>
-									{productsLoading && <div className="status">Loading products...</div>}
-									{!productsLoading && filteredProducts.length === 0 && (
-										<div className="status">No products in this category.</div>
-									)}
+  {isSearching && <div className="status">Searching...</div>}
 
-									<div className="grid products-grid">
-										{paginated.map((p) => (
-											<div className="card product-card" key={p.pd_id}>
-												<div className="card-title">{p.pd_name}</div>
-												<div className="card-desc">{p.pd_description}</div>
-												<div className="price">${parseFloat(p.pd_price).toFixed(2)}</div>
-											</div>
-										))}
-									</div>
+  {/* SEARCH MODE */}
+  {searchResults.length > 0 && (
+    <section className="products-section">
+      <h2 className="section-title">Search Results</h2>
 
-									{/* Pagination */}
-									{filteredProducts.length > PRODUCTS_PER_PAGE && (
-										<div className="pagination">
-											<button onClick={() => gotoPage(currentPage - 1)} disabled={currentPage === 1}>&laquo; Prev</button>
-											{Array.from({ length: totalPages }).map((_, i) => (
-												<button
-													key={i}
-													className={currentPage === i + 1 ? "active" : ""}
-													onClick={() => gotoPage(i + 1)}
-												>
-													{i + 1}
-												</button>
-											))}
-											<button onClick={() => gotoPage(currentPage + 1)} disabled={currentPage === totalPages}>Next &raquo;</button>
-										</div>
-									)}
-								</section>
-							)}
-						</div>
+      <div className="products-grid">
+        {searchResults.map((p) => (
+          <div className="card product-card" key={p.pd_id}>
+            <div className="card-title">{p.pd_name}</div>
+            <div className="card-desc">{p.pd_description}</div>
+            <div className="price">
+              ${parseFloat(p.pd_price).toFixed(2)}
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  )}
+
+  {/* NO SEARCH RESULTS */}
+  {searchQuery && !isSearching && searchResults.length === 0 && (
+    <div className="status">No products found.</div>
+  )}
+
+  {/* CATEGORY MODE */}
+  {!searchQuery && selectedCat && (
+    <section className="products-section">
+      <h2 className="section-title">Products — {selectedCat.cd_name}</h2>
+
+      {productsLoading && <div className="status">Loading products...</div>}
+
+      {!productsLoading && filteredProducts.length === 0 && (
+        <div className="status">No products in this category.</div>
+      )}
+
+      <div className="grid products-grid">
+        {paginated.map((p) => (
+          <div className="card product-card" key={p.pd_id}>
+            <div className="card-title">{p.pd_name}</div>
+            <div className="card-desc">{p.pd_description}</div>
+            <div className="price">
+              ${parseFloat(p.pd_price).toFixed(2)}
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  )}
+
+  {/* DEFAULT STATE */}
+  {!searchQuery && !selectedCat && (
+    <div className="status">Select a category to view products.</div>
+  )}
+
+</div>
 					</div>
 				)}
 			</main>

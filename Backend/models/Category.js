@@ -27,5 +27,11 @@ const Category = sequelize.define("Category", {
   tableName: "categories",
   freezeTableName: true
 });
+// Category.hasMany(Product, { foreignKey: "cd_id",as: "products" });
+// Category.hasMany(require("./Product"), {
+//   foreignKey: "cd_id",
+//   as: "products"
+// });
+
 
 module.exports = Category;

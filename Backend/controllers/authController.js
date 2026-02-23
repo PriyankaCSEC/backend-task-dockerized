@@ -4,7 +4,7 @@ const User = require("../models/User");
 
 exports.signup = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password } = req.body;//get data from frontedn
 
     if (!name || !email || !password) {
       return res.status(400).json({ message: "All fields are required" });
@@ -16,7 +16,7 @@ exports.signup = async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-
+//create user in db
     await User.create({
       name,
       email,
@@ -52,14 +52,16 @@ exports.login = async (req, res) => {
 
         //Generate token
     const token = jwt.sign(
-      {
+      {//this data gets stored inside token
         id: user.id,
-        username: user.username
+        username: user.name,
       },
-      process.env.JWT_SECRET,
+      process.env.JWT_SECRET,//private key - to verfiy tokens
       { expiresIn: "1d" }
     );
 
+
+    // Send token and user info to frontend
     res.json({
       message: "Login successful",
       token,
