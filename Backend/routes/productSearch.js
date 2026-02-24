@@ -1,6 +1,8 @@
 const express = require("express");
 const router = express.Router();
 const esClient = require("../config/elastic");
+//search api for full text search
+
 
 router.get("/", async (req, res) => {
   try {

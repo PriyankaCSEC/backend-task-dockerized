@@ -7,3 +7,4 @@ const esClient = new Client({
 });
 
 module.exports = esClient;
+//this code connects to elasticsearch container
