@@ -23,13 +23,13 @@ function Signup() {
     e.preventDefault();
 
     if (formData.password !== formData.confirmPassword) {
-  alert("Passwords do not match!");
-  return;
-}
+      alert("Passwords do not match!");
+      return;
+    }
 
     try {
       const res = await axios.post(
-        "http://localhost:5000/api/auth/signup",
+        `${import.meta.env.VITE_API_URL}/api/auth/signup`,
         formData
       );
 
@@ -75,7 +75,7 @@ function Signup() {
             onChange={handleChange}
             required
           />
-         <input
+          <input
             type="password"
             name="confirmPassword"
             placeholder="Re-enter Password"

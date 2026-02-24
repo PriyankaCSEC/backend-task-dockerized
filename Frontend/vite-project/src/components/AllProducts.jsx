@@ -10,27 +10,27 @@ function AllProducts() {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-	const [user, setUser] = useState(null);
+  const [user, setUser] = useState(null);
   //search
-	// const [searchQuery, setSearchQuery] = useState("");
-	const [searchResults, setSearchResults] = useState([]);
-	// const [isSearching, setIsSearching] = useState(false);
-const PAGES_PER_GROUP = 4;
+  // const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  // const [isSearching, setIsSearching] = useState(false);
+  const PAGES_PER_GROUP = 4;
   const PRODUCTS_PER_PAGE = 8;
 
-//restore user
+  //restore user
   useEffect(() => {
-  const storedUser = localStorage.getItem("user");
-  const token = localStorage.getItem("token");
+    const storedUser = localStorage.getItem("user");
+    const token = localStorage.getItem("token");
 
-  if (!storedUser || !token) {
-    navigate("/signin");
-    return;
-  }
+    if (!storedUser || !token) {
+      navigate("/signin");
+      return;
+    }
 
-  setUser(JSON.parse(storedUser));
-  axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-}, [navigate]);
+    setUser(JSON.parse(storedUser));
+    axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+  }, [navigate]);
 
 
   useEffect(() => {
@@ -41,7 +41,7 @@ const PAGES_PER_GROUP = 4;
     setLoading(true);
     try {
       const res = await axios.get(
-        `http://localhost:5000/api/allproducts?page=${pageNumber}&limit=${PRODUCTS_PER_PAGE}`
+        `${import.meta.env.VITE_API_URL}/api/allproducts?page=${pageNumber}&limit=${PRODUCTS_PER_PAGE}`
       );
 
       setProducts(res.data.products);
@@ -54,89 +54,89 @@ const PAGES_PER_GROUP = 4;
   };
 
   // const totalPages = Math.ceil(total / PRODUCTS_PER_PAGE);
-const totalPages = Math.ceil(total / PRODUCTS_PER_PAGE);
+  const totalPages = Math.ceil(total / PRODUCTS_PER_PAGE);
 
-const currentGroup = Math.ceil(page / PAGES_PER_GROUP);
+  const currentGroup = Math.ceil(page / PAGES_PER_GROUP);
 
-const startPage = (currentGroup - 1) * PAGES_PER_GROUP + 1;
-const endPage = Math.min(startPage + PAGES_PER_GROUP - 1, totalPages);
+  const startPage = (currentGroup - 1) * PAGES_PER_GROUP + 1;
+  const endPage = Math.min(startPage + PAGES_PER_GROUP - 1, totalPages);
 
-const pageNumbers = [];
-for (let i = startPage; i <= endPage; i++) {
-  pageNumbers.push(i);
-}
+  const pageNumbers = [];
+  for (let i = startPage; i <= endPage; i++) {
+    pageNumbers.push(i);
+  }
   return (
-  <div className="home-root">
+    <div className="home-root">
 
-    {/* ===== NAVBAR (Same as Home) ===== */}
- <Navbar
-  user={user}
-  setSearchResults={setSearchResults}
-  setSelectedCat={() => {}}
-/>
+      {/* ===== NAVBAR (Same as Home) ===== */}
+      <Navbar
+        user={user}
+        setSearchResults={setSearchResults}
+        setSelectedCat={() => { }}
+      />
 
 
-    {/* ===== LAYOUT WRAPPER ===== */}
-    <div className="layout">
+      {/* ===== LAYOUT WRAPPER ===== */}
+      <div className="layout">
 
-      {/* Empty sidebar (to preserve layout alignment) */}
-      {/* <aside className="sidebar"></aside> */}
- 
-      {/* Content Area */}
-      <div className="content">
-        <div className="products-section">
+        {/* Empty sidebar (to preserve layout alignment) */}
+        {/* <aside className="sidebar"></aside> */}
 
-          <h2 className="section-title">All Products</h2>
+        {/* Content Area */}
+        <div className="content">
+          <div className="products-section">
 
-          {loading && <div className="status">Loading...</div>}
+            <h2 className="section-title">All Products</h2>
 
-          <div className="products-grid">
-            {products.map((p) => (
-              <div className="product-card" key={p.pd_id}>
-                <div className="card-title">{p.pd_name}</div>
-                <div className="card-desc">{p.pd_description}</div>
-                <div className="price">
-                  $ {parseFloat(p.pd_price).toFixed(2)}
+            {loading && <div className="status">Loading...</div>}
+
+            <div className="products-grid">
+              {products.map((p) => (
+                <div className="product-card" key={p.pd_id}>
+                  <div className="card-title">{p.pd_name}</div>
+                  <div className="card-desc">{p.pd_description}</div>
+                  <div className="price">
+                    $ {parseFloat(p.pd_price).toFixed(2)}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
+
+            {/* Pagination */}
+            <div className="pagination">
+              {/* Previous Group */}
+              <button
+                onClick={() => setPage(startPage - 1)}
+                disabled={startPage === 1}
+              >
+                «
+              </button>
+
+              {/* Page Numbers */}
+              {pageNumbers.map((num) => (
+                <button
+                  key={num}
+                  className={page === num ? "active" : ""}
+                  onClick={() => setPage(num)}
+                >
+                  {num}
+                </button>
+              ))}
+
+              {/* Next Group */}
+              <button
+                onClick={() => setPage(endPage + 1)}
+                disabled={endPage === totalPages}
+              >
+                »
+              </button>
+            </div>
+
           </div>
-
-          {/* Pagination */}
-   <div className="pagination">
-  {/* Previous Group */}
-  <button
-    onClick={() => setPage(startPage - 1)}
-    disabled={startPage === 1}
-  >
-    «
-  </button>
-
-  {/* Page Numbers */}
-  {pageNumbers.map((num) => (
-    <button
-      key={num}
-      className={page === num ? "active" : ""}
-      onClick={() => setPage(num)}
-    >
-      {num}
-    </button>
-  ))}
-
-  {/* Next Group */}
-  <button
-    onClick={() => setPage(endPage + 1)}
-    disabled={endPage === totalPages}
-  >
-    »
-  </button>
-</div>
-
         </div>
       </div>
     </div>
-  </div>
-);
+  );
 }
 
 export default AllProducts;

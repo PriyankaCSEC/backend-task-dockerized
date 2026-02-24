@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
-function Navbar({ user, setSearchResults, setSelectedCat, setParentSearchQuery }) {
+function Navbar({ user, setSearchResults, setSelectedCat, setParentSearchQuery, setCurrentPage }) {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
@@ -11,13 +11,15 @@ function Navbar({ user, setSearchResults, setSelectedCat, setParentSearchQuery }
     if (!searchQuery.trim()) return;
 
     setIsSearching(true);
+    if (setCurrentPage) setCurrentPage(1);
+
     try {
       // Try category endpoint first
       try {
         const catRes = await axios.get(
-          `http://localhost:5000/api/category/${encodeURIComponent(
+          `${import.meta.env.VITE_API_URL}/api/category/${encodeURIComponent(
             searchQuery
-          )}?page=1&perPage=50`
+          )}?page=1&perPage=100`
         );
 
         // If category found, use its products
@@ -32,35 +34,35 @@ function Navbar({ user, setSearchResults, setSelectedCat, setParentSearchQuery }
         }
       }
 
-    // ElasticSearch route
-    const esRes = await axios.get(
-      `http://localhost:5000/api/products/search-es`,
-      {
-        params: {
-          q: searchQuery,
-          page: 1,       // can be dynamic later
-          perPage: 10,   // match your frontend pagination
-          // minPrice, maxPrice // optional: if you want numeric filters
-        },
-      }
-    );
+      // ElasticSearch route
+      const esRes = await axios.get(
+        `${import.meta.env.VITE_API_URL}/api/products/search-es`,
+        {
+          params: {
+            q: searchQuery,
+            page: 1,       // fetching many items to allow frontend pagination
+            perPage: 100,  // match your frontend pagination logic
+            // minPrice, maxPrice // optional: if you want numeric filters
+          },
+        }
+      );
 
-    setSearchResults(esRes.data.products || []);
-    setSelectedCat(null);
-    console.log(
-      `SEARCH QUERY: ${searchQuery}`,
-      "RESULT COUNT:",
-      esRes.data.total,
-      "ROWS:",
-      esRes.data.products.map((p) => p.pd_name)
-    );
+      setSearchResults(esRes.data.products || []);
+      setSelectedCat(null);
+      console.log(
+        `SEARCH QUERY: ${searchQuery}`,
+        "RESULT COUNT:",
+        esRes.data.total,
+        "ROWS:",
+        esRes.data.products.map((p) => p.pd_name)
+      );
 
-  } catch (err) {
-    console.error("Search failed:", err);
-  } finally {
-    setIsSearching(false);
-  }
-};
+    } catch (err) {
+      console.error("Search failed:", err);
+    } finally {
+      setIsSearching(false);
+    }
+  };
 
   const handleLogout = () => {
     localStorage.removeItem("token");

@@ -126,8 +126,11 @@ app.get("/api/category/:name", async (req, res) => {
 //   foreignKey: "cd_id",
 //   as: "category"
 // });
-// Test DB connection & sync tables
-(async () => {
+// Test DB connection & sync tables with retry
+const MAX_RETRIES = 10;
+const RETRY_DELAY = 3000;
+
+const connectWithRetry = async (retries = 0) => {
   try {
     await sequelize.authenticate();
     console.log("✅ DB Connection successful");
@@ -139,6 +142,15 @@ app.get("/api/category/:name", async (req, res) => {
     const PORT = process.env.PORT || 5000;
     app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
   } catch (err) {
-    console.error("❌ DB Connection failed:", err);
+    console.error(`❌ DB Connection failed (attempt ${retries + 1}/${MAX_RETRIES}):`, err.message);
+    if (retries < MAX_RETRIES - 1) {
+      console.log(`🔄 Retrying in ${RETRY_DELAY}ms...`);
+      setTimeout(() => connectWithRetry(retries + 1), RETRY_DELAY);
+    } else {
+      console.error("❌ Max retries reached. Exiting...");
+      process.exit(1);
+    }
   }
-})();
+};
+
+connectWithRetry();

@@ -1,6 +1,7 @@
 require("dotenv").config();
 const sequelize = require("../config/db");
 const Product = require("../models/Product");
+const Category = require("../models/Category");
 const esClient = require("../config/elastic");
 
 (async () => {
@@ -22,6 +23,8 @@ const esClient = require("../config/elastic");
             pd_description: { type: "text" },
             pd_price: { type: "double" },
             cd_id: { type: "integer" },
+            cd_name: { type: "text" },
+            cd_description: { type: "text" },
             createdAt: { type: "date" },
             updatedAt: { type: "date" }
           }
@@ -30,6 +33,12 @@ const esClient = require("../config/elastic");
     });
 
     const products = await Product.findAll();
+    const categories = await Category.findAll();
+    const categoryMap = {};
+    categories.forEach((cat) => {
+      categoryMap[cat.cd_id] = cat;
+    });
+
     console.log(`Found ${products.length} products in MySQL`);
 
     const bulkBody = [];
@@ -47,6 +56,8 @@ const esClient = require("../config/elastic");
           pd_description: product.pd_description,
           pd_price: parseFloat(product.pd_price),
           cd_id: product.cd_id,
+          cd_name: categoryMap[product.cd_id] ? categoryMap[product.cd_id].cd_name : "",
+          cd_description: categoryMap[product.cd_id] ? categoryMap[product.cd_id].cd_description : "",
           createdAt: product.createdAt,
           updatedAt: product.updatedAt,
         }

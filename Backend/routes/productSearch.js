@@ -44,11 +44,42 @@ router.get("/", async (req, res) => {
     // Text search
     if (q) {
       esQuery.bool.must.push({
-        wildcard: {
-          pd_name: {
-            value: `*${q}*`,
-            case_insensitive: true
-          }
+        bool: {
+          should: [
+            {
+              wildcard: {
+                pd_name: {
+                  value: `*${q}*`,
+                  case_insensitive: true
+                }
+              }
+            },
+            {
+              wildcard: {
+                pd_description: {
+                  value: `*${q}*`,
+                  case_insensitive: true
+                }
+              }
+            },
+            {
+              wildcard: {
+                cd_name: {
+                  value: `*${q}*`,
+                  case_insensitive: true
+                }
+              }
+            },
+            {
+              wildcard: {
+                cd_description: {
+                  value: `*${q}*`,
+                  case_insensitive: true
+                }
+              }
+            }
+          ],
+          minimum_should_match: 1
         }
       });
     }

@@ -20,26 +20,26 @@ function Home() {
 	//search
 	const [searchQuery, setSearchQuery] = useState("");
 	const [searchResults, setSearchResults] = useState([]);//stores products returned from backend
-	const [isSearching, setIsSearching] = useState(false);
+	//isSearching removed natively
 
 
 	useEffect(() => {
-  //Restore user session
-  const storedUser = localStorage.getItem("user");
-  const token = localStorage.getItem("token");
+		//Restore user session
+		const storedUser = localStorage.getItem("user");
+		const token = localStorage.getItem("token");
 
-  if (!storedUser || !token) {
-    navigate("/signin");
-    return;
-  }
-  setUser(JSON.parse(storedUser));
-   // Set token globally for axios
-  axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+		if (!storedUser || !token) {
+			navigate("/signin");
+			return;
+		}
+		setUser(JSON.parse(storedUser));
+		// Set token globally for axios
+		axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
-		
+
 		const fetchCategories = async () => {
 			try {
-				const res = await axios.get("http://localhost:5000/api/categories");
+				const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/categories`);
 				setCategories(res.data || []);
 			} catch (err) {
 				setError(err.response?.data?.message || err.message);
@@ -54,7 +54,7 @@ function Home() {
 	const fetchProducts = async () => {
 		setProductsLoading(true);
 		try {
-			const res = await axios.get("http://localhost:5000/api/products");
+			const res = await axios.get(`${import.meta.env.VITE_API_URL}/api/products`);
 			console.log(res);
 			setProducts(res.data || []);
 		} catch (err) {
@@ -63,27 +63,7 @@ function Home() {
 			setProductsLoading(false);
 		}
 	};
-//search
-	const handleSearch = async () => {
-  if (!searchQuery.trim()) return;
-
-  try {
-    setIsSearching(true);
-//elastic search endpoint
-		const res = await axios.get(
-  `http://localhost:5000/api/products/search-es?q=${encodeURIComponent(searchQuery)}&page=${currentPage}&perPage=${PRODUCTS_PER_PAGE}`
-);
-
-setSearchResults(res.data.products || []);
-		// backend returns { products: [...] }
-		// setSearchResults(res.data.products || res.data); //update search results state with products returned from backend
-    setSelectedCat(null); // stop category filtering
-  } catch (err) {
-    console.error(err);
-  } finally {
-    setIsSearching(false);
-  }
-};
+	// search removed
 
 
 
@@ -103,21 +83,45 @@ setSearchResults(res.data.products || []);
 
 	const paginated = filteredProducts.slice((currentPage - 1) * PRODUCTS_PER_PAGE, currentPage * PRODUCTS_PER_PAGE);
 
+	const searchTotalPages = Math.max(1, Math.ceil(searchResults.length / PRODUCTS_PER_PAGE));
+	const searchPaginated = searchResults.slice((currentPage - 1) * PRODUCTS_PER_PAGE, currentPage * PRODUCTS_PER_PAGE);
+
 	const gotoPage = (n) => setCurrentPage(Math.min(Math.max(1, n), totalPages));
+	const searchGotoPage = (n) => setCurrentPage(Math.min(Math.max(1, n), searchTotalPages));
+
+	const PAGES_PER_GROUP = 4;
+	const currentGroup = Math.ceil(currentPage / PAGES_PER_GROUP);
+	const startPage = (currentGroup - 1) * PAGES_PER_GROUP + 1;
+	const endPage = Math.min(startPage + PAGES_PER_GROUP - 1, totalPages);
+
+	const pageNumbers = [];
+	for (let i = startPage; i <= endPage; i++) {
+		pageNumbers.push(i);
+	}
+
+	const searchCurrentGroup = Math.ceil(currentPage / PAGES_PER_GROUP);
+	const searchStartPage = (searchCurrentGroup - 1) * PAGES_PER_GROUP + 1;
+	const searchEndPage = Math.min(searchStartPage + PAGES_PER_GROUP - 1, searchTotalPages);
+
+	const searchPageNumbers = [];
+	for (let i = searchStartPage; i <= searchEndPage; i++) {
+		searchPageNumbers.push(i);
+	}
 
 	return (
 		<div className="home-root">
-			<Navbar 
-	 user={user}
-	 setSearchResults={setSearchResults}
-	 setSelectedCat={setSelectedCat}
-	 setParentSearchQuery={setSearchQuery}
-	/>
+			<Navbar
+				user={user}
+				setSearchResults={setSearchResults}
+				setSelectedCat={setSelectedCat}
+				setParentSearchQuery={setSearchQuery}
+				setCurrentPage={setCurrentPage}
+			/>
 
 
 			<header className="hero">
 				<h1>Shop by Category</h1>
-				
+
 			</header>
 
 			<main className="container">
@@ -145,70 +149,124 @@ setSearchResults(res.data.products || []);
 							</div>
 						</aside>
 
-	<div className="content">
+						<div className="content">
 
-  {isSearching && <div className="status">Searching...</div>}
+							{/* isSearching removed natively */}
 
-  {/* SEARCH MODE */}
-  {searchResults.length > 0 && (
-    <section className="products-section">
-      <h2 className="section-title">Search Results</h2>
+							{/* SEARCH MODE */}
+							{searchResults.length > 0 && (
+								<section className="products-section">
+									<h2 className="section-title">Search Results</h2>
 
-      <div className="products-grid">
-        {searchResults.map((p) => (
-          <div className="card product-card" key={p.pd_id}>
-            <div className="card-title">{p.pd_name}</div>
-            <div className="card-desc">{p.pd_description}</div>
-            <div className="price">
-              ${parseFloat(p.pd_price).toFixed(2)}
-            </div>
-          </div>
-        ))}
-      </div>
-    </section>
-  )}
+									<div className="products-grid">
+										{searchPaginated.map((p) => (
+											<div className="card product-card" key={p.pd_id}>
+												<div className="card-title">{p.pd_name}</div>
+												<div className="card-desc">{p.pd_description}</div>
+												<div className="price">
+													${parseFloat(p.pd_price).toFixed(2)}
+												</div>
+											</div>
+										))}
+									</div>
 
-  {/* NO SEARCH RESULTS */}
-  {searchQuery && !isSearching && searchResults.length === 0 && (
-    <div className="status">No products found.</div>
-  )}
+									{/* Search Pagination */}
+									{searchTotalPages > 1 && (
+										<div className="pagination">
+											<button
+												onClick={() => searchGotoPage(searchStartPage - 1)}
+												disabled={searchStartPage === 1}
+											>
+												«
+											</button>
+											{searchPageNumbers.map((num) => (
+												<button
+													key={num}
+													className={currentPage === num ? "active" : ""}
+													onClick={() => searchGotoPage(num)}
+												>
+													{num}
+												</button>
+											))}
+											<button
+												onClick={() => searchGotoPage(searchEndPage + 1)}
+												disabled={searchEndPage === searchTotalPages}
+											>
+												»
+											</button>
+										</div>
+									)}
+								</section>
+							)}
 
-  {/* CATEGORY MODE */}
-  {!searchQuery && selectedCat && (
-    <section className="products-section">
-      <h2 className="section-title">Products — {selectedCat.cd_name}</h2>
+							{/* NO SEARCH RESULTS */}
+							{searchQuery && searchResults.length === 0 && (
+								<div className="status">No products found.</div>
+							)}
 
-      {productsLoading && <div className="status">Loading products...</div>}
+							{/* CATEGORY MODE */}
+							{!searchQuery && selectedCat && (
+								<section className="products-section">
+									<h2 className="section-title">Products — {selectedCat.cd_name}</h2>
 
-      {!productsLoading && filteredProducts.length === 0 && (
-        <div className="status">No products in this category.</div>
-      )}
+									{productsLoading && <div className="status">Loading products...</div>}
 
-      <div className="grid products-grid">
-        {paginated.map((p) => (
-          <div className="card product-card" key={p.pd_id}>
-            <div className="card-title">{p.pd_name}</div>
-            <div className="card-desc">{p.pd_description}</div>
-            <div className="price">
-              ${parseFloat(p.pd_price).toFixed(2)}
-            </div>
-          </div>
-        ))}
-      </div>
-    </section>
-  )}
+									{!productsLoading && filteredProducts.length === 0 && (
+										<div className="status">No products in this category.</div>
+									)}
 
-  {/* DEFAULT STATE */}
-  {!searchQuery && !selectedCat && (
-    <div className="status">Select a category to view products.</div>
-  )}
+									<div className="grid products-grid">
+										{paginated.map((p) => (
+											<div className="card product-card" key={p.pd_id}>
+												<div className="card-title">{p.pd_name}</div>
+												<div className="card-desc">{p.pd_description}</div>
+												<div className="price">
+													${parseFloat(p.pd_price).toFixed(2)}
+												</div>
+											</div>
+										))}
+									</div>
 
-</div>
+									{/* Pagination */}
+									{totalPages > 1 && (
+										<div className="pagination">
+											<button
+												onClick={() => gotoPage(startPage - 1)}
+												disabled={startPage === 1}
+											>
+												«
+											</button>
+											{pageNumbers.map((num) => (
+												<button
+													key={num}
+													className={currentPage === num ? "active" : ""}
+													onClick={() => gotoPage(num)}
+												>
+													{num}
+												</button>
+											))}
+											<button
+												onClick={() => gotoPage(endPage + 1)}
+												disabled={endPage === totalPages}
+											>
+												»
+											</button>
+										</div>
+									)}
+								</section>
+							)}
+
+							{/* DEFAULT STATE */}
+							{!searchQuery && !selectedCat && (
+								<div className="status">Select a category to view products.</div>
+							)}
+
+						</div>
 					</div>
 				)}
 			</main>
 		</div>
-		);
+	);
 }
 
 export default Home;
